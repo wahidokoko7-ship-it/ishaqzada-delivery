@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ps" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827">
+<meta name="description" content="اسحاق‌زاده آنلاین ډیلیوري">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+<title>اسحاق‌زاده آنلاین ډیلیوري</title>
+</head>
+<body>
+<div id="app">
+<header class="top">
+  <div class="brand"><div class="logo">إ</div><div><b>اسحاق‌زاده آنلاین ډیلیوري</b><small>چټک • خوندي • منظم</small></div></div>
+  <button id="installBtn" class="ghost hidden">⬇ نصب</button>
+</header>
+
+<main>
+<section id="auth" class="card">
+  <h1>ستاسې ټول آرډرونه، په یوه ځای کې</h1>
+  <p class="muted">د موبایل شمېرې له لارې ننوځئ او خپل آرډرونه او راپورونه اداره کړئ.</p>
+  <div class="tabs"><button class="tab active" data-tab="login">ننوتل</button><button class="tab" data-tab="register">نوی ثبت</button></div>
+  <form id="loginForm" class="form">
+    <label>د موبایل شمېره<input id="loginPhone" inputmode="tel" placeholder="07XX XXX XXX" required></label>
+    <label>څلور عددي PIN<input id="loginPin" inputmode="numeric" maxlength="4" type="password" placeholder="••••" required></label>
+    <button class="primary">اپلیکیشن ته ننوتل</button>
+    <button type="button" id="forgot" class="link">PIN مې هېر شوی</button>
+  </form>
+  <form id="registerForm" class="form hidden">
+    <label>بشپړ نوم<input id="regName" placeholder="خپل بشپړ نوم" required></label>
+    <label>د موبایل شمېره<input id="regPhone" inputmode="tel" placeholder="07XX XXX XXX" required></label>
+    <label>خپل عکس<input id="regPhoto" type="file" accept="image/*"></label>
+    <label>څلور عددي PIN<input id="regPin" inputmode="numeric" maxlength="4" type="password" placeholder="خپل PIN" required></label>
+    <button class="primary">د تایید لپاره ثبتول</button>
+  </form>
+</section>
+
+<section id="pending" class="card hidden center"><div class="big">⌛</div><h2>د تایید په انتظار</h2><p>ستاسې معلومات اډمین ته رسېدلي. له تایید وروسته اپلیکیشن وکاروئ.</p><button id="logout1" class="danger">وتل</button></section>
+
+<section id="dashboard" class="hidden">
+  <div class="welcome card"><div><span class="muted">ښه راغلاست</span><h2 id="welcomeName">—</h2></div><button id="logout2" class="danger">وتل</button></div>
+  <div class="stats"><div class="stat card"><span>کندهار</span><b id="kCount">0</b><small>جنسونه</small></div><div class="stat card"><span>نور ولایتونه</span><b id="oCount">0</b><small>جنسونه</small></div><div class="stat card"><span>ټوله بیه</span><b id="total">0</b><small>؋ افغانۍ</small></div></div>
+  <div class="sectionHead"><h3>زما وروستي آرډرونه</h3><button id="newOrder" class="primary small">＋ نوی آرډر</button></div>
+  <div id="orders" class="list"></div>
+</section>
+
+<section id="admin" class="hidden">
+  <div class="card"><div class="sectionHead"><div><span class="muted">اډمین</span><h2>مدیریت</h2></div><button id="adminLogout" class="danger">وتل</button></div>
+  <h3>د شاګردانو تایید <span id="pendingCount" class="badge">0</span></h3>
+  <div id="requests" class="list"></div>
+  <hr>
+  <h3>ټول آرډرونه</h3><div id="allOrders" class="list"></div>
+  </div>
+</section>
+</main>
+
+<div id="orderModal" class="modal hidden"><div class="modalBox"><button class="x" data-close>×</button><h2>نوی آرډر</h2>
+<form id="orderForm" class="form">
+<label>د جنس عکس<input id="orderPhoto" type="file" accept="image/*"></label>
+<label>د جنس نوم<input id="orderName" placeholder="مثلاً: نارینه کمیس" required></label>
+<label>د مشتری شمېره<input id="customerPhone" inputmode="tel" placeholder="07XX XXX XXX" required></label>
+<label>ولایت<select id="province" required></select></label>
+<label>تعداد<input id="qty" type="number" min="1" value="1" required></label>
+<label>بشپړ ادرس<textarea id="address" required></textarea></label>
+<label>ټوله بیه (افغانۍ)<input id="price" type="number" min="0" required></label>
+<button class="primary">آرډر ثبتول</button>
+</form></div></div>
+
+<div id="forgotModal" class="modal hidden"><div class="modalBox"><button class="x" data-close>×</button><h2>PIN مو هېر شوی؟</h2><p>له اډمین سره په <b>0700426319</b> اړیکه ونیسئ. اډمین به درته نوی څلور عددي PIN وټاکي.</p><button class="primary" data-close>سمه ده</button></div></div>
+<div id="toast" class="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name":"اسحاق‌زاده آنلاین ډیلیوري",
+  "short_name":"اسحاق‌زاده ډیلیوري",
+  "start_url":"./",
+  "display":"standalone",
+  "dir":"rtl",
+  "lang":"ps",
+  "theme_color":"#111827",
+  "background_color":"#f4f6f8",
+  "description":"د اسحاق‌زاده آنلاین خدماتو د آرډر او ډیلیوري مدیریت اپلیکیشن",
+  "icons":[
+    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}
