@@ -1,484 +1,353 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ps" dir="rtl">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#111827">
-<meta name="description" content="اسحاق‌زاده آنلاین ډیلیوري">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css">
+  <title>اسحاق‌زاده آنلاین ډیلیوري</title>
 
-<title>اسحاق‌زاده آنلاین ډیلیوري</title>
+  <meta name="theme-color" content="#111827">
+  <meta name="description" content="اسحاق‌زاده آنلاین ډیلیوري">
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    #recaptcha-container {
+      margin-top: 10px;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page:first-child {
+      display: block;
+    }
+
+    .order-item,
+    .admin-user-item,
+    .admin-order-item {
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 12px;
+      background: #f5f5f5;
+    }
+
+    button {
+      cursor: pointer;
+    }
+  </style>
 </head>
 
 <body>
 
-<div id="app">
+  <!-- =========================
+       Login
+  ========================== -->
 
-<header class="top">
-  <div class="brand">
-    <div class="logo">إ</div>
-    <div>
-      <b>اسحاق‌زاده آنلاین ډیلیوري</b>
-      <small>چټک • خوندي • منظم</small>
-    </div>
-  </div>
+  <section id="login-page" class="page">
 
-  <button id="installBtn" class="ghost hidden">⬇ نصب</button>
-</header>
+    <h1>اسحاق‌زاده آنلاین ډیلیوري</h1>
 
-<main>
+    <h2>ننوتل</h2>
 
-<!-- ================= LOGIN / REGISTER ================= -->
+    <input
+      id="login-phone"
+      type="tel"
+      placeholder="موبایل شمېره"
+    >
 
-<section id="auth" class="card">
+    <input
+      id="login-pin"
+      type="password"
+      placeholder="PIN"
+    >
 
-  <h1>ستاسې ټول آرډرونه، په یوه ځای کې</h1>
-
-  <p class="muted">
-    د موبایل شمېرې له لارې ننوځئ او خپل آرډرونه او راپورونه اداره کړئ.
-  </p>
-
-  <div class="tabs">
-    <button class="tab active" data-tab="login">ننوتل</button>
-    <button class="tab" data-tab="register">نوی ثبت</button>
-  </div>
-
-  <!-- LOGIN -->
-
-  <form id="loginForm" class="form">
-
-    <label>
-      د موبایل شمېره
-      <input
-        id="loginPhone"
-        inputmode="tel"
-        placeholder="07XX XXX XXX"
-        required
-      >
-    </label>
-
-    <label>
-      څلور عددي PIN
-      <input
-        id="loginPin"
-        inputmode="numeric"
-        maxlength="4"
-        type="password"
-        placeholder="••••"
-        required
-      >
-    </label>
-
-    <button type="submit" class="primary">
-      اپلیکیشن ته ننوتل
+    <button id="login-button">
+      Login
     </button>
 
-    <button type="button" id="forgot" class="link">
-      PIN مې هېر شوی
+    <button onclick="showRegister()">
+      نوی حساب جوړول
     </button>
 
-  </form>
-
-  <!-- REGISTER -->
-
-  <form id="registerForm" class="form hidden">
-
-    <label>
-      بشپړ نوم
-      <input
-        id="regName"
-        placeholder="خپل بشپړ نوم"
-        required
-      >
-    </label>
-
-    <label>
-      د موبایل شمېره
-      <input
-        id="regPhone"
-        inputmode="tel"
-        placeholder="07XX XXX XXX"
-        required
-      >
-    </label>
-
-    <label>
-      څلور عددي PIN
-      <input
-        id="regPin"
-        inputmode="numeric"
-        maxlength="4"
-        type="password"
-        placeholder="••••"
-        required
-      >
-    </label>
-
-    <label>
-      د پروفایل عکس
-      <input
-        id="regPhoto"
-        type="file"
-        accept="image/*"
-      >
-    </label>
-
-    <button type="submit" class="primary">
-      د کارکوونکي په توګه ثبتېدل
+    <button onclick="showForgotPin()">
+      PIN هېر شوی؟
     </button>
 
-  </form>
+  </section>
 
-  <!-- Firebase reCAPTCHA -->
-  <div id="recaptcha-container"></div>
 
-</section>
+  <!-- =========================
+       Register
+  ========================== -->
 
+  <section id="register-page" class="page">
 
-<!-- ================= PENDING ================= -->
+    <h2>نوی حساب جوړول</h2>
 
-<section id="pending" class="card hidden center">
+    <input
+      id="register-name"
+      type="text"
+      placeholder="نوم"
+    >
 
-  <div class="big">⏳</div>
+    <input
+      id="register-phone"
+      type="tel"
+      placeholder="موبایل شمېره"
+    >
 
-  <h2>ستاسې غوښتنه ثبت شوه</h2>
+    <input
+      id="register-pin"
+      type="password"
+      placeholder="PIN"
+    >
 
-  <p class="muted">
-    ستاسې د کارکوونکي حساب د اډمین تایید ته انتظار کوي.
-  </p>
+    <select id="register-province">
+      <option value="">ولایت انتخاب کړئ</option>
+    </select>
 
-  <button id="logout1" class="ghost">
-    وتل
-  </button>
+    <button id="register-button">
+      ثبتول
+    </button>
 
-</section>
+    <button onclick="showLogin()">
+      بېرته Login
+    </button>
 
+  </section>
 
-<!-- ================= DASHBOARD ================= -->
 
-<section id="dashboard" class="hidden">
+  <!-- =========================
+       Register Verification
+  ========================== -->
 
-  <div class="card">
+  <section id="verify-page" class="page">
 
-    <div class="row between">
+    <h2>د موبایل تایید</h2>
 
-      <div>
-        <small class="muted">ښه راغلاست</small>
-        <h2 id="welcomeName">کارکوونکی</h2>
-      </div>
-
-      <button id="logout2" class="ghost">
-        وتل
-      </button>
-
-    </div>
-
-  </div>
-
-
-  <div class="stats">
-
-    <div class="stat card">
-      <span>کندهار</span>
-      <b id="kCount">0</b>
-      <small>آرډرونه</small>
-    </div>
-
-    <div class="stat card">
-      <span>نور ولایتونه</span>
-      <b id="oCount">0</b>
-      <small>آرډرونه</small>
-    </div>
-
-    <div class="stat card">
-      <span>ټول قیمت</span>
-      <b id="total">0</b>
-      <small>افغانۍ</small>
-    </div>
-
-  </div>
-
-
-  <div class="card">
-
-    <div class="row between">
-      <h2>وروستي آرډرونه</h2>
-
-      <button id="newOrder" class="primary">
-        + نوی آرډر
-      </button>
-    </div>
-
-    <div id="orders"></div>
-
-  </div>
-
-</section>
-
-
-<!-- ================= ADMIN ================= -->
-
-<section id="admin" class="hidden">
-
-  <div class="card">
-
-    <div class="row between">
-
-      <div>
-        <small class="muted">مدیریت</small>
-        <h2>اډمین پینل</h2>
-      </div>
-
-      <button id="adminLogout" class="ghost">
-        وتل
-      </button>
-
-    </div>
-
-  </div>
-
-
-  <div class="card">
-
-    <div class="row between">
-
-      <h2>د کارکوونکو غوښتنې</h2>
-
-      <span id="pendingCount" class="badge">
-        0
-      </span>
-
-    </div>
-
-    <div id="requests"></div>
-
-  </div>
-
-
-  <div class="card">
-
-    <h2>ټول آرډرونه</h2>
-
-    <div id="allOrders"></div>
-
-  </div>
-
-</section>
-
-
-<!-- ================= NEW ORDER MODAL ================= -->
-
-<div id="orderModal" class="modal hidden">
-
-  <div class="modalBox">
-
-    <div class="row between">
-
-      <h2>نوی آرډر</h2>
-
-      <button
-        class="ghost"
-        data-close
-        type="button"
-      >
-        ✕
-      </button>
-
-    </div>
-
-
-    <form id="orderForm" class="form">
-
-      <label>
-        د محصول عکس
-        <input
-          id="orderPhoto"
-          type="file"
-          accept="image/*"
-        >
-      </label>
-
-
-      <label>
-        د محصول نوم
-        <input
-          id="orderName"
-          placeholder="مثلاً: کریسټل هیر جیل"
-          required
-        >
-      </label>
-
-
-      <label>
-        د مشتری موبایل
-        <input
-          id="customerPhone"
-          inputmode="tel"
-          placeholder="07XX XXX XXX"
-          required
-        >
-      </label>
-
-
-      <label>
-        ولایت
-        <select id="province" required>
-          <option value="">
-            ولایت انتخاب کړئ
-          </option>
-        </select>
-      </label>
-
-
-      <label>
-        تعداد
-        <input
-          id="qty"
-          type="number"
-          min="1"
-          value="1"
-          required
-        >
-      </label>
-
-
-      <label>
-        بشپړ ادرس
-        <textarea
-          id="address"
-          rows="3"
-          placeholder="د مشتری بشپړ ادرس"
-          required
-        ></textarea>
-      </label>
-
-
-      <label>
-        ټول قیمت
-        <input
-          id="price"
-          type="number"
-          min="0"
-          placeholder="مثلاً 1400"
-          required
-        >
-      </label>
-
-
-      <button
-        type="submit"
-        class="primary"
-      >
-        📦 آرډر ثبت کړه
-      </button>
-
-    </form>
-
-  </div>
-
-</div>
-
-
-<!-- ================= FORGOT PIN ================= -->
-
-<div id="forgotModal" class="modal hidden">
-
-  <div class="modalBox">
-
-    <div class="row between">
-
-      <h2>PIN مې هېر شوی</h2>
-
-      <button
-        class="ghost"
-        data-close
-        type="button"
-      >
-        ✕
-      </button>
-
-    </div>
-
-    <p class="muted">
-      د PIN د بیا ترلاسه کولو لپاره له اډمین سره اړیکه ونیسئ.
+    <p>
+      د SMS له لارې راغلی کوډ ولیکئ.
     </p>
 
-    <div class="card center">
+    <input
+      id="verification-code"
+      type="text"
+      inputmode="numeric"
+      placeholder="د تایید کوډ"
+    >
 
-      <div class="big">📞</div>
+    <button id="verify-button">
+      تایید
+    </button>
 
-      <b>0700426319</b>
-
-    </div>
-
-  </div>
-
-</div>
-
-
-<!-- ================= TOAST ================= -->
-
-<div id="toast"></div>
-
-</main>
-
-</div>
+  </section>
 
 
-<!-- ================= FIREBASE ================= -->
+  <!-- =========================
+       Login Verification
+  ========================== -->
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <section id="verify-login-page" class="page">
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <h2>د Login تایید</h2>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <p>
+      د SMS له لارې راغلی کوډ ولیکئ.
+    </p>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+    <input
+      id="login-verification-code"
+      type="text"
+      inputmode="numeric"
+      placeholder="د تایید کوډ"
+    >
 
+    <button id="verify-login-button">
+      تایید
+    </button>
 
-<script>
-
-const firebaseConfig = {
-
-  apiKey: "AIzaSyBTbCfJzrrDVJmwmCFv00Ob7HRgsUKz97M",
-
-  authDomain: "ishaqzada-deliver.firebaseapp.com",
-
-  projectId: "ishaqzada-deliver",
-
-  storageBucket: "ishaqzada-deliver.firebasestorage.app",
-
-  messagingSenderId: "620630878757",
-
-  appId: "1:620630878757:web:e507a5c36c65e581f86dcc",
-
-  measurementId: "G-MSQBV3EMPN"
-
-};
-
-firebase.initializeApp(firebaseConfig);
-
-window.firebaseApp = firebase.app();
-
-window.firebaseAuth = firebase.auth();
-
-window.firebaseDB = firebase.firestore();
-
-window.firebaseStorage = firebase.storage();
-
-</script>
+  </section>
 
 
-<!-- Firebase reCAPTCHA container -->
+  <!-- =========================
+       Pending
+  ========================== -->
 
-<div id="recaptcha-container"></div>
+  <section id="pending-page" class="page">
+
+    <h2>ستاسو حساب د تایید په انتظار کې دی ⏳</h2>
+
+    <p>
+      Admin به ستاسو حساب تایید کړي.
+    </p>
+
+    <button onclick="logout()">
+      وتل
+    </button>
+
+  </section>
 
 
-<!-- App -->
+  <!-- =========================
+       Worker Dashboard
+  ========================== -->
 
-<script src="app.js"></script>
+  <section id="dashboard-page" class="page">
+
+    <h2>ډشبورډ</h2>
+
+    <p>
+      کارن:
+      <strong id="user-name"></strong>
+    </p>
+
+    <p>
+      شمېره:
+      <strong id="user-phone"></strong>
+    </p>
+
+    <h3>نوی فرمایش</h3>
+
+    <input
+      id="customer-name"
+      type="text"
+      placeholder="د مشتری نوم"
+    >
+
+    <input
+      id="customer-phone"
+      type="tel"
+      placeholder="د مشتری شمېره"
+    >
+
+    <select id="order-province">
+      <option value="">ولایت انتخاب کړئ</option>
+    </select>
+
+    <input
+      id="address"
+      type="text"
+      placeholder="د مشتری ادرس"
+    >
+
+    <input
+      id="product"
+      type="text"
+      placeholder="د محصول نوم"
+    >
+
+    <input
+      id="price"
+      type="number"
+      placeholder="قیمت"
+    >
+
+    <button id="create-order-button">
+      فرمایش ثبت کړه
+    </button>
+
+    <h3>زما فرمایشونه</h3>
+
+    <div id="my-orders"></div>
+
+    <button onclick="logout()">
+      وتل
+    </button>
+
+  </section>
+
+
+  <!-- =========================
+       Admin Dashboard
+  ========================== -->
+
+  <section id="admin-page" class="page">
+
+    <h1>Admin Panel 👑</h1>
+
+    <h2>کارکوونکي</h2>
+
+    <div id="admin-users"></div>
+
+    <h2>ټول فرمایشونه</h2>
+
+    <div id="admin-orders"></div>
+
+    <button onclick="loadAdminUsers()">
+      کارکوونکي تازه کړه
+    </button>
+
+    <button onclick="loadAdminOrders()">
+      فرمایشونه تازه کړه
+    </button>
+
+    <button onclick="logout()">
+      وتل
+    </button>
+
+  </section>
+
+
+  <!-- =========================
+       Forgot PIN
+  ========================== -->
+
+  <section id="forgot-page" class="page">
+
+    <h2>PIN هېر شوی؟</h2>
+
+    <p>
+      د PIN د بیا ترلاسه کولو لپاره له Admin سره اړیکه ونیسئ.
+    </p>
+
+    <h3>
+      📞 0704451971
+    </h3>
+
+    <button onclick="showLogin()">
+      بېرته Login
+    </button>
+
+  </section>
+
+
+  <!-- =========================
+       Install App
+  ========================== -->
+
+  <button
+    id="install-button"
+    style="display:none;"
+  >
+    📲 اپ نصب کړه
+  </button>
+
+
+  <!-- =========================
+       ONLY ONE reCAPTCHA
+  ========================== -->
+
+  <div id="recaptcha-container"></div>
+
+
+  <!-- =========================
+       Firebase
+  ========================== -->
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+
+
+  <!-- App -->
+  <script src="app.js"></script>
 
 </body>
 </html>
