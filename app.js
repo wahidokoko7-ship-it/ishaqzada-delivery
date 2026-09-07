@@ -30,45 +30,18 @@ const storage = firebase.storage();
 let confirmationResult = null;
 let recaptchaVerifier = null;
 let currentUser = null;
-let recaptchaCreating = false;
 
 // ===============================
 // Provinces
 // ===============================
 
 const provinces = [
-  "کابل",
-  "کندهار",
-  "هرات",
-  "بلخ",
-  "ننګرهار",
-  "بدخشان",
-  "بغلان",
-  "بامیان",
-  "دایکندی",
-  "فراه",
-  "فاریاب",
-  "غزني",
-  "غور",
-  "هلمند",
-  "کاپیسا",
-  "خوست",
-  "کنړ",
-  "کندز",
-  "لغمان",
-  "لوګر",
-  "میدان وردګ",
-  "نیمروز",
-  "نورستان",
-  "پکتیا",
-  "پکتیکا",
-  "پنجشېر",
-  "پروان",
-  "سمنګان",
-  "سرپل",
-  "تخار",
-  "ارزګان",
-  "زابل"
+  "کابل","کندهار","هرات","بلخ","ننګرهار","بدخشان",
+  "بغلان","بامیان","دایکندی","فراه","فاریاب","غزني",
+  "غور","هلمند","کاپیسا","خوست","کنړ","کندز","لغمان",
+  "لوګر","میدان وردګ","نیمروز","نورستان","پکتیا",
+  "پکتیکا","پنجشېر","پروان","سمنګان","سرپل","تخار",
+  "ارزګان","زابل"
 ];
 
 // ===============================
@@ -116,9 +89,7 @@ function isAdminUser(user) {
 
 function text(id, value) {
   const el = $(id);
-  if (el) {
-    el.textContent = value ?? "";
-  }
+  if (el) el.textContent = value ?? "";
 }
 
 function val(id) {
@@ -168,19 +139,20 @@ function showForgotPin() {
 }
 
 // ===============================
-// reCAPTCHA — FIXED
-// ===============================
-//
-// مهم:
-// reCAPTCHA نور د page load پر مهال render نه کېږي.
-// یوازې د SMS غوښتلو پر وخت جوړېږي.
-// render() هم په لاس نه اجرا کېږي.
-// دا د:
-// "reCAPTCHA has already been rendered in this element"
-// ستونزه ختموي.
+// reCAPTCHA
 // ===============================
 
-function clearRecaptchaContainer() {
+function clearRecaptcha() {
+  try {
+    if (recaptchaVerifier) {
+      recaptchaVerifier.clear();
+    }
+  } catch (e) {
+    console.log("reCAPTCHA clear:", e);
+  }
+
+  recaptchaVerifier = null;
+
   const container = $("recaptcha-container");
 
   if (container) {
@@ -188,29 +160,10 @@ function clearRecaptchaContainer() {
   }
 }
 
-function resetRecaptcha() {
-  try {
-    if (recaptchaVerifier) {
-      recaptchaVerifier.clear();
-    }
-  } catch (error) {
-    console.log("reCAPTCHA clear:", error);
-  }
-
-  recaptchaVerifier = null;
-  recaptchaCreating = false;
-
-  clearRecaptchaContainer();
-}
-
 function setupRecaptcha() {
-  // که verifier لا دمخه جوړ وي، هماغه استعمال کړه
+
   if (recaptchaVerifier) {
     return recaptchaVerifier;
-  }
-
-  if (recaptchaCreating) {
-    return null;
   }
 
   const container = $("recaptcha-container");
@@ -220,61 +173,63 @@ function setupRecaptcha() {
     return null;
   }
 
-  recaptchaCreating = true;
-
   try {
-    // که پخوانی verifier په container کې پاتې وي، پاک یې کړه
-    clearRecaptchaContainer();
 
-    recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
-      "recaptcha-container",
-      {
-        size: "invisible",
+    container.innerHTML = "";
 
-        callback: function () {
-          console.log("reCAPTCHA verified");
-        },
+    recaptchaVerifier =
+      new firebase.auth.RecaptchaVerifier(
+        "recaptcha-container",
+        {
+          size: "invisible",
 
-        "expired-callback": function () {
-          console.log("reCAPTCHA expired");
-          resetRecaptcha();
-        },
+          callback: function () {
+            console.log("reCAPTCHA verified");
+          },
 
-        "error-callback": function () {
-          console.log("reCAPTCHA error");
-          resetRecaptcha();
+          "expired-callback": function () {
+            console.log("reCAPTCHA expired");
+            clearRecaptcha();
+          },
+
+          "error-callback": function () {
+            console.log("reCAPTCHA error");
+            clearRecaptcha();
+          }
         }
-      }
-    );
-
-    recaptchaCreating = false;
-
-    // مهم:
-    // دلته recaptchaVerifier.render() نشته.
-    // Firebase به یې د signInWithPhoneNumber پر مهال render کړي.
+      );
 
     return recaptchaVerifier;
 
   } catch (error) {
-    recaptchaCreating = false;
-    recaptchaVerifier = null;
 
-    console.error("reCAPTCHA setup error:", error);
+    console.error(
+      "reCAPTCHA setup error:",
+      error
+    );
 
-    clearRecaptchaContainer();
+    clearRecaptcha();
 
     return null;
   }
 }
 
 // ===============================
-// Firebase Error Messages
+// Firebase Error
 // ===============================
 
 function firebaseError(error) {
-  console.error("Firebase error:", error);
 
-  const code = error?.code || "";
+  console.error(
+    "Firebase Error:",
+    error
+  );
+
+  const code =
+    error?.code || "";
+
+  const message =
+    error?.message || "";
 
   switch (code) {
 
@@ -294,25 +249,28 @@ function firebaseError(error) {
       return "د تایید کوډ موده پای ته رسېدلې.";
 
     case "auth/session-expired":
-      return "د تایید ناستې موده پای ته رسېدلې. بیا SMS وغواړئ.";
+      return "د تایید ناستې موده پای ته رسېدلې.";
 
     case "auth/captcha-check-failed":
       return "د امنیت تایید ناکام شو. بیا هڅه وکړئ.";
 
+    case "auth/invalid-app-credential":
+      return "د ویب‌اپ امنیتي تایید ستونزه ده.";
+
+    case "auth/unauthorized-domain":
+      return "دا Domain په Firebase کې اجازه نه لري.\n\nwahidokoko7-ship-it.github.io";
+
     case "auth/network-request-failed":
       return "د انټرنېټ ستونزه ده.";
-
-    case "auth/operation-not-allowed":
-      return "Phone Authentication په Firebase کې فعال نه دی.";
-
-    case "auth/invalid-app-credential":
-      return "د امنیت تایید ستونزه ده. بیا هڅه وکړئ.";
 
     case "auth/missing-phone-number":
       return "د موبایل شمېره ولیکئ.";
 
+    case "auth/operation-not-allowed":
+      return "Phone Authentication په Firebase کې Enabled دی، خو Firebase د ویب‌اپ غوښتنه نه مني.\n\nCode: " + code + "\n\n" + message;
+
     default:
-      return error?.message || "یوه ستونزه رامنځته شوه.";
+      return "Firebase خطا:\n\nCode: " + code + "\n\n" + message;
   }
 }
 
@@ -322,19 +280,23 @@ function firebaseError(error) {
 
 function setupProvinces() {
 
-  const selects = document.querySelectorAll(
-    "#province, #register-province, #order-province"
-  );
+  const selects =
+    document.querySelectorAll(
+      "#province, #register-province, #order-province"
+    );
 
   selects.forEach(select => {
 
     if (!select) return;
 
-    if (select.options.length > 1) return;
+    if (select.options.length > 1) {
+      return;
+    }
 
     provinces.forEach(province => {
 
-      const option = document.createElement("option");
+      const option =
+        document.createElement("option");
 
       option.value = province;
       option.textContent = province;
@@ -350,34 +312,61 @@ function setupProvinces() {
 
 async function registerWorker() {
 
-  const name = val("register-name");
-  const phoneInput = val("register-phone");
-  const pin = val("register-pin");
-  const province = val("register-province");
+  const name =
+    val("register-name");
+
+  const phoneInput =
+    val("register-phone");
+
+  const pin =
+    val("register-pin");
+
+  const province =
+    val("register-province");
 
   if (!name || !phoneInput || !pin || !province) {
-    alertMsg("مهرباني وکړئ ټول معلومات بشپړ کړئ.");
+
+    alertMsg(
+      "مهرباني وکړئ ټول معلومات بشپړ کړئ."
+    );
+
     return;
   }
 
-  const phone = cleanPhone(phoneInput);
+  const phone =
+    cleanPhone(phoneInput);
 
   if (!/^\+937\d{8}$/.test(phone)) {
-    alertMsg("د افغانستان معتبر موبایل نمبر ولیکئ.");
+
+    alertMsg(
+      "د افغانستان معتبر موبایل نمبر ولیکئ."
+    );
+
     return;
   }
 
   if (!/^\d{4,}$/.test(pin)) {
-    alertMsg("PIN باید لږ تر لږه ۴ عددي وي.");
+
+    alertMsg(
+      "PIN باید لږ تر لږه ۴ عددي وي."
+    );
+
     return;
   }
 
   try {
 
-    const verifier = setupRecaptcha();
+    clearRecaptcha();
+
+    const verifier =
+      setupRecaptcha();
 
     if (!verifier) {
-      alertMsg("د امنیت تایید فعال نه شو. بیا هڅه وکړئ.");
+
+      alertMsg(
+        "د امنیت تایید فعال نه شو."
+      );
+
       return;
     }
 
@@ -405,9 +394,11 @@ async function registerWorker() {
 
   } catch (error) {
 
-    alertMsg(firebaseError(error));
+    alertMsg(
+      firebaseError(error)
+    );
 
-    resetRecaptcha();
+    clearRecaptcha();
   }
 }
 
@@ -417,15 +408,24 @@ async function registerWorker() {
 
 async function verifyCode() {
 
-  const code = val("verification-code");
+  const code =
+    val("verification-code");
 
   if (!confirmationResult) {
-    alertMsg("لومړی د موبایل شمېره تایید کړئ.");
+
+    alertMsg(
+      "لومړی د موبایل شمېره تایید کړئ."
+    );
+
     return;
   }
 
   if (!code) {
-    alertMsg("د تایید کوډ ولیکئ.");
+
+    alertMsg(
+      "د تایید کوډ ولیکئ."
+    );
+
     return;
   }
 
@@ -434,11 +434,14 @@ async function verifyCode() {
     const result =
       await confirmationResult.confirm(code);
 
-    const user = result.user;
+    const user =
+      result.user;
 
     const saved =
       JSON.parse(
-        sessionStorage.getItem("registerData") || "{}"
+        sessionStorage.getItem(
+          "registerData"
+        ) || "{}"
       );
 
     if (saved.name) {
@@ -456,7 +459,8 @@ async function verifyCode() {
 
           pin: saved.pin,
 
-          province: saved.province,
+          province:
+            saved.province,
 
           role: "worker",
 
@@ -466,25 +470,27 @@ async function verifyCode() {
             firebase.firestore.FieldValue.serverTimestamp()
 
         });
-
-      sessionStorage.removeItem(
-        "registerData"
-      );
-
-      alertMsg(
-        "ستاسو حساب جوړ شو. د Admin له تایید وروسته به اپ وکارولای شئ."
-      );
     }
+
+    sessionStorage.removeItem(
+      "registerData"
+    );
 
     confirmationResult = null;
 
-    resetRecaptcha();
+    clearRecaptcha();
+
+    alertMsg(
+      "ستاسو حساب جوړ شو. د Admin له تایید وروسته به اپ وکارولای شئ."
+    );
 
     await renderUser();
 
   } catch (error) {
 
-    alertMsg(firebaseError(error));
+    alertMsg(
+      firebaseError(error)
+    );
   }
 }
 
@@ -494,37 +500,64 @@ async function verifyCode() {
 
 async function sendLoginCode() {
 
-  const phoneInput = val("login-phone");
-  const pin = val("login-pin");
+  const phoneInput =
+    val("login-phone");
+
+  const pin =
+    val("login-pin");
 
   if (!phoneInput) {
-    alertMsg("موبایل شمېره ولیکئ.");
+
+    alertMsg(
+      "موبایل شمېره ولیکئ."
+    );
+
     return;
   }
 
   if (!pin) {
-    alertMsg("PIN ولیکئ.");
+
+    alertMsg(
+      "PIN ولیکئ."
+    );
+
     return;
   }
 
   if (!/^\d{4,}$/.test(pin)) {
-    alertMsg("PIN سم ولیکئ.");
+
+    alertMsg(
+      "PIN سم ولیکئ."
+    );
+
     return;
   }
 
-  const phone = cleanPhone(phoneInput);
+  const phone =
+    cleanPhone(phoneInput);
 
   if (!/^\+937\d{8}$/.test(phone)) {
-    alertMsg("د افغانستان معتبر موبایل نمبر ولیکئ.");
+
+    alertMsg(
+      "د افغانستان معتبر موبایل نمبر ولیکئ."
+    );
+
     return;
   }
 
   try {
 
-    const verifier = setupRecaptcha();
+    clearRecaptcha();
+
+    const verifier =
+      setupRecaptcha();
 
     if (!verifier) {
-      alertMsg("د امنیت تایید فعال نه شو. بیا هڅه وکړئ.");
+
+      alertMsg(
+        "د امنیت تایید فعال نه شو."
+      );
+
       return;
     }
 
@@ -548,13 +581,17 @@ async function sendLoginCode() {
       "د تایید کوډ ستاسو موبایل ته واستول شو."
     );
 
-    showPage("verify-login-page");
+    showPage(
+      "verify-login-page"
+    );
 
   } catch (error) {
 
-    alertMsg(firebaseError(error));
+    alertMsg(
+      firebaseError(error)
+    );
 
-    resetRecaptcha();
+    clearRecaptcha();
   }
 }
 
@@ -564,19 +601,24 @@ async function sendLoginCode() {
 
 async function verifyLoginCode() {
 
-  const code = val("login-verification-code");
+  const code =
+    val("login-verification-code");
 
   if (!confirmationResult) {
+
     alertMsg(
       "لومړی د Login کوډ وغواړئ."
     );
+
     return;
   }
 
   if (!code) {
+
     alertMsg(
       "د تایید کوډ ولیکئ."
     );
+
     return;
   }
 
@@ -585,9 +627,11 @@ async function verifyLoginCode() {
     const result =
       await confirmationResult.confirm(code);
 
-    const user = result.user;
+    const user =
+      result.user;
 
-    currentUser = user;
+    currentUser =
+      user;
 
     const pin =
       sessionStorage.getItem(
@@ -615,11 +659,14 @@ async function verifyLoginCode() {
             ? snap.data().name
             : "Admin",
 
-        phone: ADMIN_PHONE,
+        phone:
+          ADMIN_PHONE,
 
-        role: "admin",
+        role:
+          "admin",
 
-        approved: true,
+        approved:
+          true,
 
         updatedAt:
           firebase.firestore.FieldValue.serverTimestamp()
@@ -636,9 +683,10 @@ async function verifyLoginCode() {
         "loginPhone"
       );
 
-      confirmationResult = null;
+      confirmationResult =
+        null;
 
-      resetRecaptcha();
+      clearRecaptcha();
 
       await renderUser();
 
@@ -664,12 +712,13 @@ async function verifyLoginCode() {
 
       await auth.signOut();
 
-      resetRecaptcha();
+      clearRecaptcha();
 
       return;
     }
 
-    const data = snap.data();
+    const data =
+      snap.data();
 
     if (data.pin !== pin) {
 
@@ -679,7 +728,7 @@ async function verifyLoginCode() {
 
       await auth.signOut();
 
-      resetRecaptcha();
+      clearRecaptcha();
 
       return;
     }
@@ -692,7 +741,7 @@ async function verifyLoginCode() {
 
       await auth.signOut();
 
-      resetRecaptcha();
+      clearRecaptcha();
 
       return;
     }
@@ -705,15 +754,18 @@ async function verifyLoginCode() {
       "loginPhone"
     );
 
-    confirmationResult = null;
+    confirmationResult =
+      null;
 
-    resetRecaptcha();
+    clearRecaptcha();
 
     await renderUser();
 
   } catch (error) {
 
-    alertMsg(firebaseError(error));
+    alertMsg(
+      firebaseError(error)
+    );
   }
 }
 
@@ -732,10 +784,6 @@ async function renderUser() {
 
     return;
   }
-
-  // ===========================
-  // ADMIN
-  // ===========================
 
   if (isAdminUser(currentUser)) {
 
@@ -759,10 +807,6 @@ async function renderUser() {
 
     return;
   }
-
-  // ===========================
-  // WORKER
-  // ===========================
 
   try {
 
@@ -804,7 +848,9 @@ async function renderUser() {
 
     } else {
 
-      showPage("pending-page");
+      showPage(
+        "pending-page"
+      );
     }
 
   } catch (error) {
@@ -823,7 +869,9 @@ async function renderUser() {
 
 async function ensureAdminAccount() {
 
-  if (!currentUser) return;
+  if (!currentUser) {
+    return;
+  }
 
   if (!isAdminUser(currentUser)) {
     return;
@@ -840,13 +888,17 @@ async function ensureAdminAccount() {
 
     await ref.set({
 
-      name: "Admin",
+      name:
+        "Admin",
 
-      phone: ADMIN_PHONE,
+      phone:
+        ADMIN_PHONE,
 
-      role: "admin",
+      role:
+        "admin",
 
-      approved: true,
+      approved:
+        true,
 
       createdAt:
         firebase.firestore.FieldValue.serverTimestamp()
@@ -866,11 +918,14 @@ async function ensureAdminAccount() {
 
     await ref.set({
 
-      phone: ADMIN_PHONE,
+      phone:
+        ADMIN_PHONE,
 
-      role: "admin",
+      role:
+        "admin",
 
-      approved: true,
+      approved:
+        true,
 
       updatedAt:
         firebase.firestore.FieldValue.serverTimestamp()
@@ -887,7 +942,9 @@ async function ensureAdminAccount() {
 
 async function showWorkerDashboard() {
 
-  showPage("dashboard-page");
+  showPage(
+    "dashboard-page"
+  );
 
   text(
     "dashboard-user-name",
@@ -903,7 +960,9 @@ async function showWorkerDashboard() {
 
 async function showAdminDashboard() {
 
-  showPage("admin-page");
+  showPage(
+    "admin-page"
+  );
 
   await loadAdminUsers();
 
@@ -922,11 +981,12 @@ async function logout() {
 
     currentUser = null;
 
-    confirmationResult = null;
+    confirmationResult =
+      null;
 
     sessionStorage.clear();
 
-    resetRecaptcha();
+    clearRecaptcha();
 
     showLogin();
 
@@ -1016,7 +1076,8 @@ async function createOrder() {
       status:
         "pending",
 
-      photo: "",
+      photo:
+        "",
 
       createdAt:
         firebase.firestore.FieldValue.serverTimestamp()
@@ -1027,7 +1088,6 @@ async function createOrder() {
         .collection("orders")
         .add(order);
 
-    // Order photo
     const photoInput =
       $("order-photo") ||
       $("orderPhoto");
@@ -1103,7 +1163,9 @@ function clearOrderForm() {
 
 async function loadMyOrders() {
 
-  if (!currentUser) return;
+  if (!currentUser) {
+    return;
+  }
 
   try {
 
@@ -1121,7 +1183,9 @@ async function loadMyOrders() {
       $("my-orders") ||
       $("orders-list");
 
-    if (!container) return;
+    if (!container) {
+      return;
+    }
 
     container.innerHTML = "";
 
@@ -1220,16 +1284,14 @@ async function loadAdminUsers() {
   const container =
     $("admin-users");
 
-  if (!container) return;
+  if (!container) {
+    return;
+  }
 
   if (
     !currentUser ||
     !isAdminUser(currentUser)
   ) {
-
-    alertMsg(
-      "یوازې Admin دا معلومات لیدلی شي."
-    );
 
     return;
   }
@@ -1357,9 +1419,11 @@ async function approveUser(userId) {
       .doc(userId)
       .update({
 
-        approved: true,
+        approved:
+          true,
 
-        role: "worker",
+        role:
+          "worker",
 
         approvedAt:
           firebase.firestore.FieldValue.serverTimestamp()
@@ -1392,16 +1456,14 @@ async function loadAdminOrders() {
     $("admin-orders") ||
     $("all-orders");
 
-  if (!container) return;
+  if (!container) {
+    return;
+  }
 
   if (
     !currentUser ||
     !isAdminUser(currentUser)
   ) {
-
-    alertMsg(
-      "یوازې Admin دا معلومات لیدلی شي."
-    );
 
     return;
   }
@@ -1679,7 +1741,8 @@ function forgotPinInfo() {
 auth.onAuthStateChanged(
   async user => {
 
-    currentUser = user;
+    currentUser =
+      user;
 
     if (user) {
 
@@ -1696,7 +1759,8 @@ auth.onAuthStateChanged(
 // PWA Install
 // ===============================
 
-let deferredPrompt = null;
+let deferredPrompt =
+  null;
 
 window.addEventListener(
   "beforeinstallprompt",
@@ -1704,7 +1768,8 @@ window.addEventListener(
 
     event.preventDefault();
 
-    deferredPrompt = event;
+    deferredPrompt =
+      event;
 
     const button =
       $("install-button") ||
@@ -1726,7 +1791,8 @@ window.addEventListener(
 
           await deferredPrompt.userChoice;
 
-          deferredPrompt = null;
+          deferredPrompt =
+            null;
 
           button.style.display =
             "none";
