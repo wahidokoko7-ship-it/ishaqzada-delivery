@@ -19,15 +19,28 @@ provinces.forEach(p => {
 const auth = window.firebaseAuth;
 const firestore = window.firebaseDB;
 
+// ===============================
+// 👑 اصلي Admin نمبر
+// ===============================
+const ADMIN_PHONE = "+93704451971";
+
+function isAdminPhone(phone) {
+  return cleanPhone(phone) === ADMIN_PHONE;
+}
+
 let currentUser = null;
 let confirmationResult = null;
 
 function toast(text) {
   const t = $("#toast");
   if (!t) return;
+
   t.textContent = text;
   t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2500);
+
+  setTimeout(() => {
+    t.classList.remove("show");
+  }, 2500);
 }
 
 function show(id) {
@@ -37,7 +50,10 @@ function show(id) {
   });
 
   const target = $("#" + id);
-  if (target) target.classList.remove("hidden");
+
+  if (target) {
+    target.classList.remove("hidden");
+  }
 }
 
 function esc(s) {
@@ -65,10 +81,17 @@ function cleanPhone(phone) {
 }
 
 async function getUserData(uid) {
-  const snap = await firestore.collection("users").doc(uid).get();
+  const snap = await firestore
+    .collection("users")
+    .doc(uid)
+    .get();
+
   return snap.exists ? snap.data() : null;
 }
 
+// ===============================
+// 👤 User Screen
+// ===============================
 async function renderUser(user) {
   if (!user) {
     currentUser = null;
@@ -78,16 +101,34 @@ async function renderUser(user) {
 
   currentUser = user;
 
+  // 👑 Admin د تایید شوې Firebase شمېرې له مخې
+  const admin = isAdminPhone(user.phoneNumber || "");
+
+  if (admin) {
+    const data = await getUserData(user.uid);
+
+    // که د Admin معلومات لا نه وي جوړ شوي
+    if (!data) {
+      await saveUserData(user.uid, {
+        uid: user.uid,
+        phone: user.phoneNumber,
+        name: "اسحاق‌زاده اډمین",
+        approved: true,
+        role: "admin",
+        createdAt:
+          firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+
+    await renderAdmin();
+    show("admin");
+    return;
+  }
+
   const data = await getUserData(user.uid);
 
   if (!data) {
     show("pending");
-    return;
-  }
-
-  if (data.role === "admin") {
-    await renderAdmin();
-    show("admin");
     return;
   }
 
@@ -97,12 +138,19 @@ async function renderUser(user) {
   }
 
   const welcome = $("#welcomeName");
-  if (welcome) welcome.textContent = data.name || "کارکوونکی";
+
+  if (welcome) {
+    welcome.textContent = data.name || "کارکوونکی";
+  }
 
   show("dashboard");
+
   await renderOrders();
 }
 
+// ===============================
+// 📦 Worker Orders
+// ===============================
 async function renderOrders() {
   if (!currentUser) return;
 
@@ -123,6 +171,7 @@ async function renderOrders() {
   orders.sort((a, b) => {
     const ad = a.createdAt?.seconds || 0;
     const bd = b.createdAt?.seconds || 0;
+
     return bd - ad;
   });
 
@@ -140,10 +189,17 @@ async function renderOrders() {
     }
   });
 
-  if ($("#kCount")) $("#kCount").textContent = k;
-  if ($("#oCount")) $("#oCount").textContent = other;
+  if ($("#kCount")) {
+    $("#kCount").textContent = k;
+  }
+
+  if ($("#oCount")) {
+    $("#oCount").textContent = other;
+  }
+
   if ($("#total")) {
-    $("#total").textContent = total.toLocaleString("en-US");
+    $("#total").textContent =
+      total.toLocaleString("en-US");
   }
 
   if (!$("#orders")) return;
@@ -153,135 +209,246 @@ async function renderOrders() {
       <div class="card center">
         <div class="big">📦</div>
         <b>آرډر نشته</b>
-        <p class="muted">تر اوسه کوم آرډر نه دی ثبت شوی.</p>
+        <p class="muted">
+          تر اوسه کوم آرډر نه دی ثبت شوی.
+        </p>
       </div>
     `;
+
     return;
   }
 
   $("#orders").innerHTML = orders.map(o => `
     <div class="order">
       ${o.photo ? `<img src="${esc(o.photo)}">` : ""}
+
       <div class="orderInfo">
         <b>${esc(o.name)}</b>
+
         <div class="muted">
           ${esc(o.province)} • ${o.qty || 0} عدد •
           ${(Number(o.price) || 0).toLocaleString()} ؋
         </div>
-        <small>${esc(o.customerPhone)}</small>
+
+        <small>
+          ${esc(o.customerPhone)}
+        </small>
       </div>
-      <span class="badge">نوی</span>
+
+      <span class="badge">
+        نوی
+      </span>
     </div>
   `).join("");
 }
 
+// ===============================
+// 👑 Admin Dashboard
+// ===============================
 async function renderAdmin() {
-  const usersSnap = await firestore.collection("users").get();
+  try {
+    const usersSnap =
+      await firestore.collection("users").get();
 
-  const users = [];
-  usersSnap.forEach(doc => {
-    users.push({
-      id: doc.id,
-      ...doc.data()
+    const users = [];
+
+    usersSnap.forEach(doc => {
+      users.push({
+        id: doc.id,
+        ...doc.data()
+      });
     });
-  });
 
-  const pending = users.filter(u => u.role !== "admin" && !u.approved);
+    const pending =
+      users.filter(u =>
+        u.role !== "admin" &&
+        !u.approved
+      );
 
-  if ($("#pendingCount")) {
-    $("#pendingCount").textContent = pending.length;
-  }
-
-  if ($("#requests")) {
-    if (!pending.length) {
-      $("#requests").innerHTML =
-        `<div class="muted">نوی درخواست نشته.</div>`;
-    } else {
-      $("#requests").innerHTML = pending.map(u => `
-        <div class="request">
-          ${u.photo ? `<img src="${esc(u.photo)}">` : ""}
-          <div class="orderInfo">
-            <b>${esc(u.name || "")}</b>
-            <div>${esc(u.phone || "")}</div>
-          </div>
-          <button class="primary" onclick="approveUser('${u.id}')">
-            ✓ تایید
-          </button>
-        </div>
-      `).join("");
+    if ($("#pendingCount")) {
+      $("#pendingCount").textContent =
+        pending.length;
     }
-  }
 
-  const ordersSnap = await firestore.collection("orders").get();
+    if ($("#requests")) {
 
-  const orders = [];
-  ordersSnap.forEach(doc => {
-    orders.push({
-      id: doc.id,
-      ...doc.data()
-    });
-  });
+      if (!pending.length) {
 
-  orders.sort((a, b) => {
-    const ad = a.createdAt?.seconds || 0;
-    const bd = b.createdAt?.seconds || 0;
-    return bd - ad;
-  });
+        $("#requests").innerHTML =
+          `<div class="muted">
+            نوی درخواست نشته.
+          </div>`;
 
-  if ($("#allOrders")) {
-    if (!orders.length) {
-      $("#allOrders").innerHTML =
-        `<div class="muted">تر اوسه آرډر نشته.</div>`;
-    } else {
-      $("#allOrders").innerHTML = orders.map(o => `
-        <div class="order">
-          <div class="orderInfo">
-            <b>${esc(o.name)}</b>
-            <div>
-              ${esc(o.province)} • ${o.qty || 0} عدد •
-              ${(Number(o.price) || 0).toLocaleString()} ؋
+      } else {
+
+        $("#requests").innerHTML =
+          pending.map(u => `
+
+            <div class="request">
+
+              ${u.photo
+                ? `<img src="${esc(u.photo)}">`
+                : ""}
+
+              <div class="orderInfo">
+
+                <b>
+                  ${esc(u.name || "")}
+                </b>
+
+                <div>
+                  ${esc(u.phone || "")}
+                </div>
+
+              </div>
+
+              <button
+                class="primary"
+                onclick="approveUser('${u.id}')"
+              >
+                ✓ تایید
+              </button>
+
             </div>
-            <small>
-              مشتری: ${esc(o.customerPhone)}
-            </small>
-          </div>
-        </div>
-      `).join("");
+
+          `).join("");
+      }
     }
+
+    // ===============================
+    // 📦 ټول Orders
+    // ===============================
+    const ordersSnap =
+      await firestore.collection("orders").get();
+
+    const orders = [];
+
+    ordersSnap.forEach(doc => {
+      orders.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    orders.sort((a, b) => {
+      const ad = a.createdAt?.seconds || 0;
+      const bd = b.createdAt?.seconds || 0;
+
+      return bd - ad;
+    });
+
+    if ($("#allOrders")) {
+
+      if (!orders.length) {
+
+        $("#allOrders").innerHTML =
+          `<div class="muted">
+            تر اوسه آرډر نشته.
+          </div>`;
+
+      } else {
+
+        $("#allOrders").innerHTML =
+          orders.map(o => `
+
+            <div class="order">
+
+              <div class="orderInfo">
+
+                <b>
+                  ${esc(o.name)}
+                </b>
+
+                <div>
+                  ${esc(o.province)} •
+                  ${o.qty || 0} عدد •
+                  ${(Number(o.price) || 0)
+                    .toLocaleString()} ؋
+                </div>
+
+                <small>
+                  مشتری:
+                  ${esc(o.customerPhone)}
+                </small>
+
+              </div>
+
+            </div>
+
+          `).join("");
+      }
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+    toast(
+      "د Admin معلوماتو په راوړلو کې ستونزه"
+    );
   }
 }
 
+// ===============================
+// ✅ Approve Worker
+// ===============================
 window.approveUser = async function(uid) {
+
   try {
-    await firestore.collection("users").doc(uid).update({
-      approved: true,
-      approvedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+
+    await firestore
+      .collection("users")
+      .doc(uid)
+      .update({
+        approved: true,
+        approvedAt:
+          firebase.firestore.FieldValue.serverTimestamp()
+      });
 
     toast("کارکوونکی تایید شو");
+
     await renderAdmin();
 
   } catch (error) {
+
     console.error(error);
-    toast("د تایید پر مهال ستونزه رامنځته شوه");
+
+    toast(
+      "د تایید پر مهال ستونزه رامنځته شوه"
+    );
   }
 };
 
+// ===============================
+// 💾 Save User
+// ===============================
 async function saveUserData(uid, data) {
-  await firestore.collection("users").doc(uid).set(
-    data,
-    { merge: true }
-  );
+
+  await firestore
+    .collection("users")
+    .doc(uid)
+    .set(
+      data,
+      { merge: true }
+    );
 }
 
-/* Login Tabs */
+/* ===============================
+   Login Tabs
+================================ */
 
 $$(".tab").forEach(button => {
+
   button.onclick = () => {
-    $$(".tab").forEach(x => x.classList.remove("active"));
+
+    $$(".tab").forEach(x =>
+      x.classList.remove("active")
+    );
+
     button.classList.add("active");
 
     if ($("#loginForm")) {
+
       $("#loginForm").classList.toggle(
         "hidden",
         button.dataset.tab !== "login"
@@ -289,6 +456,7 @@ $$(".tab").forEach(button => {
     }
 
     if ($("#registerForm")) {
+
       $("#registerForm").classList.toggle(
         "hidden",
         button.dataset.tab !== "register"
@@ -297,21 +465,33 @@ $$(".tab").forEach(button => {
   };
 });
 
-/* Login */
+/* ===============================
+   Login
+================================ */
 
 if ($("#loginForm")) {
+
   $("#loginForm").onsubmit = async e => {
+
     e.preventDefault();
 
-    const phone = cleanPhone($("#loginPhone").value);
+    const phone =
+      cleanPhone($("#loginPhone").value);
 
     if (!phone) {
-      toast("د موبایل شمېره سمه ولیکئ");
+
+      toast(
+        "د موبایل شمېره سمه ولیکئ"
+      );
+
       return;
     }
 
     try {
-      toast("SMS کوډ لېږل کېږي...");
+
+      toast(
+        "SMS کوډ لېږل کېږي..."
+      );
 
       confirmationResult =
         await auth.signInWithPhoneNumber(
@@ -319,249 +499,529 @@ if ($("#loginForm")) {
           window.recaptchaVerifier
         );
 
-      const code = prompt("د SMS شپږ رقمي کوډ ولیکئ:");
+      const code =
+        prompt(
+          "د SMS شپږ رقمي کوډ ولیکئ:"
+        );
 
       if (!code) {
-        toast("کوډ داخل نه شو");
+
+        toast(
+          "کوډ داخل نه شو"
+        );
+
         return;
       }
 
-      const result = await confirmationResult.confirm(code);
+      const result =
+        await confirmationResult.confirm(code);
 
       const user = result.user;
 
-      const data = await getUserData(user.uid);
+      const verifiedPhone =
+        cleanPhone(
+          user.phoneNumber || phone
+        );
 
-      if (!data) {
-        await saveUserData(user.uid, {
-          phone: phone,
-          name: "",
-          approved: false,
-          role: "worker",
-          createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+      const admin =
+        verifiedPhone === ADMIN_PHONE;
+
+      const data =
+        await getUserData(user.uid);
+
+      // 👑 که Admin وي
+      if (admin) {
+
+        if (!data) {
+
+          await saveUserData(
+            user.uid,
+            {
+              uid: user.uid,
+              phone: verifiedPhone,
+              name: "اسحاق‌زاده اډمین",
+              approved: true,
+              role: "admin",
+              createdAt:
+                firebase.firestore
+                  .FieldValue
+                  .serverTimestamp()
+            }
+          );
+
+        } else if (
+          data.role !== "admin" ||
+          data.approved !== true
+        ) {
+
+          await saveUserData(
+            user.uid,
+            {
+              phone: verifiedPhone,
+              approved: true,
+              role: "admin"
+            }
+          );
+        }
+
+        toast(
+          "Admin ته بریالی ننوتل"
+        );
+
+        await renderUser(user);
+
+        return;
       }
 
-      toast("ننوتل بریالي شول");
+      // 👤 عادي Worker
+      if (!data) {
+
+        await saveUserData(
+          user.uid,
+          {
+            uid: user.uid,
+            phone: verifiedPhone,
+            name: "",
+            approved: false,
+            role: "worker",
+            createdAt:
+              firebase.firestore
+                .FieldValue
+                .serverTimestamp()
+          }
+        );
+      }
+
+      toast(
+        "ننوتل بریالي شول"
+      );
+
       await renderUser(user);
 
     } catch (error) {
+
       console.error(error);
-      toast("ننوتل ناکام شول: " + (error.message || ""));
+
+      toast(
+        "ننوتل ناکام شول: " +
+        (error.message || "")
+      );
     }
   };
 }
 
-/* Register */
+/* ===============================
+   Register
+================================ */
 
 if ($("#registerForm")) {
-  $("#registerForm").onsubmit = async e => {
-    e.preventDefault();
 
-    const name = $("#regName").value.trim();
-    const phone = cleanPhone($("#regPhone").value);
-    const pin = $("#regPin").value.trim();
+  $("#registerForm").onsubmit =
+    async e => {
 
-    if (!name) {
-      toast("نوم ولیکئ");
-      return;
-    }
+      e.preventDefault();
 
-    if (!phone) {
-      toast("د موبایل شمېره سمه ولیکئ");
-      return;
-    }
+      const name =
+        $("#regName").value.trim();
 
-    if (!/^\d{4}$/.test(pin)) {
-      toast("PIN باید ۴ رقمي وي");
-      return;
-    }
-
-    try {
-      toast("SMS کوډ لېږل کېږي...");
-
-      confirmationResult =
-        await auth.signInWithPhoneNumber(
-          phone,
-          window.recaptchaVerifier
+      const phone =
+        cleanPhone(
+          $("#regPhone").value
         );
 
-      const code = prompt("د SMS شپږ رقمي کوډ ولیکئ:");
+      const pin =
+        $("#regPin").value.trim();
 
-      if (!code) {
-        toast("کوډ داخل نه شو");
+      if (!name) {
+
+        toast(
+          "نوم ولیکئ"
+        );
+
         return;
       }
 
-      const result = await confirmationResult.confirm(code);
+      if (!phone) {
 
-      const user = result.user;
+        toast(
+          "د موبایل شمېره سمه ولیکئ"
+        );
 
-      await saveUserData(user.uid, {
-        uid: user.uid,
-        name: name,
-        phone: phone,
-        pin: pin,
-        approved: false,
-        role: "worker",
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-      toast("درخواست اډمین ته ولېږل شو");
-
-      await renderUser(user);
-
-    } catch (error) {
-      console.error(error);
-      toast("ثبت نام ناکام شو: " + (error.message || ""));
-    }
-  };
-}
-
-/* New Order */
-
-if ($("#orderForm")) {
-  $("#orderForm").onsubmit = async e => {
-    e.preventDefault();
-
-    if (!currentUser) {
-      toast("لومړی Login وکړئ");
-      return;
-    }
-
-    try {
-      const order = {
-        userId: currentUser.uid,
-        name: $("#orderName").value.trim(),
-        customerPhone: $("#customerPhone").value.trim(),
-        province: $("#province").value,
-        qty: Number($("#qty").value),
-        address: $("#address").value.trim(),
-        price: Number($("#price").value),
-        photo: "",
-        status: "new",
-        createdAt:
-          firebase.firestore.FieldValue.serverTimestamp()
-      };
-
-      await firestore.collection("orders").add(order);
-
-      $("#orderForm").reset();
-
-      if ($("#orderModal")) {
-        $("#orderModal").classList.add("hidden");
+        return;
       }
 
-      toast("آرډر په بریالیتوب ثبت شو");
+      if (!/^\d{4}$/.test(pin)) {
 
-      await renderOrders();
+        toast(
+          "PIN باید ۴ رقمي وي"
+        );
 
-    } catch (error) {
-      console.error(error);
-      toast("آرډر ثبت نه شو");
-    }
-  };
+        return;
+      }
+
+      try {
+
+        toast(
+          "SMS کوډ لېږل کېږي..."
+        );
+
+        confirmationResult =
+          await auth.signInWithPhoneNumber(
+            phone,
+            window.recaptchaVerifier
+          );
+
+        const code =
+          prompt(
+            "د SMS شپږ رقمي کوډ ولیکئ:"
+          );
+
+        if (!code) {
+
+          toast(
+            "کوډ داخل نه شو"
+          );
+
+          return;
+        }
+
+        const result =
+          await confirmationResult.confirm(code);
+
+        const user = result.user;
+
+        // د Firebase تایید شوې شمېره
+        const verifiedPhone =
+          cleanPhone(
+            user.phoneNumber || phone
+          );
+
+        // 👑 Admin که اصلي نمبر وي
+        const admin =
+          verifiedPhone === ADMIN_PHONE;
+
+        await saveUserData(
+          user.uid,
+          {
+            uid: user.uid,
+            name: name,
+            phone: verifiedPhone,
+            pin: pin,
+            approved: admin,
+            role: admin
+              ? "admin"
+              : "worker",
+            createdAt:
+              firebase.firestore
+                .FieldValue
+                .serverTimestamp()
+          }
+        );
+
+        if (admin) {
+
+          toast(
+            "🎉 ستاسې Admin حساب جوړ شو"
+          );
+
+        } else {
+
+          toast(
+            "درخواست اډمین ته ولېږل شو"
+          );
+        }
+
+        await renderUser(user);
+
+      } catch (error) {
+
+        console.error(error);
+
+        toast(
+          "ثبت نام ناکام شو: " +
+          (error.message || "")
+        );
+      }
+    };
 }
 
-/* New Order Button */
+/* ===============================
+   New Order
+================================ */
+
+if ($("#orderForm")) {
+
+  $("#orderForm").onsubmit =
+    async e => {
+
+      e.preventDefault();
+
+      if (!currentUser) {
+
+        toast(
+          "لومړی Login وکړئ"
+        );
+
+        return;
+      }
+
+      try {
+
+        const order = {
+
+          userId:
+            currentUser.uid,
+
+          name:
+            $("#orderName")
+              .value
+              .trim(),
+
+          customerPhone:
+            $("#customerPhone")
+              .value
+              .trim(),
+
+          province:
+            $("#province").value,
+
+          qty:
+            Number(
+              $("#qty").value
+            ),
+
+          address:
+            $("#address")
+              .value
+              .trim(),
+
+          price:
+            Number(
+              $("#price").value
+            ),
+
+          photo: "",
+
+          status: "new",
+
+          createdAt:
+            firebase.firestore
+              .FieldValue
+              .serverTimestamp()
+        };
+
+        await firestore
+          .collection("orders")
+          .add(order);
+
+        $("#orderForm").reset();
+
+        if ($("#orderModal")) {
+
+          $("#orderModal")
+            .classList
+            .add("hidden");
+        }
+
+        toast(
+          "آرډر په بریالیتوب ثبت شو"
+        );
+
+        await renderOrders();
+
+      } catch (error) {
+
+        console.error(error);
+
+        toast(
+          "آرډر ثبت نه شو"
+        );
+      }
+    };
+}
+
+/* ===============================
+   New Order Button
+================================ */
 
 if ($("#newOrder")) {
+
   $("#newOrder").onclick = () => {
-    $("#orderModal").classList.remove("hidden");
+
+    $("#orderModal")
+      .classList
+      .remove("hidden");
   };
 }
 
-/* Forgot PIN */
+/* ===============================
+   Forgot PIN
+================================ */
 
 if ($("#forgot")) {
+
   $("#forgot").onclick = () => {
-    $("#forgotModal").classList.remove("hidden");
+
+    $("#forgotModal")
+      .classList
+      .remove("hidden");
   };
 }
 
-/* Close Modals */
+/* ===============================
+   Close Modals
+================================ */
 
 $$("[data-close]").forEach(x => {
+
   x.onclick = () => {
-    const modal = x.closest(".modal");
-    if (modal) modal.classList.add("hidden");
+
+    const modal =
+      x.closest(".modal");
+
+    if (modal) {
+
+      modal.classList.add(
+        "hidden"
+      );
+    }
   };
 });
 
-/* Logout */
+/* ===============================
+   Logout
+================================ */
 
 async function logout() {
+
   try {
+
     await auth.signOut();
+
     currentUser = null;
+
     show("auth");
-    toast("له حسابه ووتلئ");
+
+    toast(
+      "له حسابه ووتلئ"
+    );
+
   } catch (error) {
+
     console.error(error);
   }
 }
 
-if ($("#logout1")) $("#logout1").onclick = logout;
-if ($("#logout2")) $("#logout2").onclick = logout;
-if ($("#adminLogout")) $("#adminLogout").onclick = logout;
+if ($("#logout1")) {
+  $("#logout1").onclick = logout;
+}
 
-/* Firebase Auth State */
+if ($("#logout2")) {
+  $("#logout2").onclick = logout;
+}
 
-auth.onAuthStateChanged(async user => {
-  if (user) {
-    await renderUser(user);
-  } else {
-    currentUser = null;
-    show("auth");
+if ($("#adminLogout")) {
+  $("#adminLogout").onclick = logout;
+}
+
+/* ===============================
+   Firebase Auth State
+================================ */
+
+auth.onAuthStateChanged(
+  async user => {
+
+    if (user) {
+
+      await renderUser(user);
+
+    } else {
+
+      currentUser = null;
+
+      show("auth");
+    }
   }
-});
+);
 
-/* reCAPTCHA */
+/* ===============================
+   reCAPTCHA
+================================ */
 
 try {
-  window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
-    "recaptcha-container",
-    {
-      size: "invisible"
-    }
-  );
+
+  window.recaptchaVerifier =
+    new firebase.auth.RecaptchaVerifier(
+      "recaptcha-container",
+      {
+        size: "invisible"
+      }
+    );
 
   window.recaptchaVerifier.render();
 
 } catch (error) {
-  console.log("reCAPTCHA:", error);
+
+  console.log(
+    "reCAPTCHA:",
+    error
+  );
 }
 
-/* PWA Install */
+/* ===============================
+   PWA Install
+================================ */
 
 let deferredPrompt;
 
-window.addEventListener("beforeinstallprompt", e => {
-  e.preventDefault();
-  deferredPrompt = e;
+window.addEventListener(
+  "beforeinstallprompt",
+  e => {
 
-  if ($("#installBtn")) {
-    $("#installBtn").classList.remove("hidden");
+    e.preventDefault();
+
+    deferredPrompt = e;
+
+    if ($("#installBtn")) {
+
+      $("#installBtn")
+        .classList
+        .remove("hidden");
+    }
   }
-});
+);
 
 if ($("#installBtn")) {
-  $("#installBtn").onclick = async () => {
-    if (!deferredPrompt) return;
 
-    deferredPrompt.prompt();
+  $("#installBtn").onclick =
+    async () => {
 
-    await deferredPrompt.userChoice;
+      if (!deferredPrompt) return;
 
-    deferredPrompt = null;
+      deferredPrompt.prompt();
 
-    $("#installBtn").classList.add("hidden");
-  };
+      await deferredPrompt.userChoice;
+
+      deferredPrompt = null;
+
+      $("#installBtn")
+        .classList
+        .add("hidden");
+    };
 }
 
-/* Service Worker */
+/* ===============================
+   Service Worker
+================================ */
 
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("./sw.js")
-    .catch(err => console.log("SW:", err));
-      }
+
+  navigator.serviceWorker
+    .register("./sw.js")
+    .catch(
+      err => console.log(
+        "SW:",
+        err
+      )
+    );
+          }
