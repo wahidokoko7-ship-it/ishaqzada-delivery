@@ -30,7 +30,7 @@
 
 <main>
 
-<!-- ==================== LOGIN / REGISTER ==================== -->
+<!-- ================= LOGIN / REGISTER ================= -->
 
 <section id="auth" class="card">
 
@@ -105,7 +105,19 @@
     </label>
 
     <label>
-      خپل عکس
+      څلور عددي PIN
+      <input
+        id="regPin"
+        inputmode="numeric"
+        maxlength="4"
+        type="password"
+        placeholder="••••"
+        required
+      >
+    </label>
+
+    <label>
+      د پروفایل عکس
       <input
         id="regPhoto"
         type="file"
@@ -113,61 +125,55 @@
       >
     </label>
 
-    <label>
-      څلور عددي PIN
-      <input
-        id="regPin"
-        inputmode="numeric"
-        maxlength="4"
-        type="password"
-        placeholder="خپل PIN"
-        required
-      >
-    </label>
-
     <button type="submit" class="primary">
-      د تایید لپاره ثبتول
+      د کارکوونکي په توګه ثبتېدل
     </button>
 
   </form>
 
+  <!-- Firebase reCAPTCHA -->
+  <div id="recaptcha-container"></div>
+
 </section>
 
 
-<!-- ==================== PENDING ==================== -->
+<!-- ================= PENDING ================= -->
 
 <section id="pending" class="card hidden center">
 
-  <div class="big">⌛</div>
+  <div class="big">⏳</div>
 
-  <h2>د تایید په انتظار</h2>
+  <h2>ستاسې غوښتنه ثبت شوه</h2>
 
-  <p>
-    ستاسې معلومات اډمین ته رسېدلي.
-    له تایید وروسته اپلیکیشن وکاروئ.
+  <p class="muted">
+    ستاسې د کارکوونکي حساب د اډمین تایید ته انتظار کوي.
   </p>
 
-  <button id="logout1" class="danger">
+  <button id="logout1" class="ghost">
     وتل
   </button>
 
 </section>
 
 
-<!-- ==================== DASHBOARD ==================== -->
+<!-- ================= DASHBOARD ================= -->
 
 <section id="dashboard" class="hidden">
 
-  <div class="welcome card">
+  <div class="card">
 
-    <div>
-      <span class="muted">ښه راغلاست</span>
-      <h2 id="welcomeName">—</h2>
+    <div class="row between">
+
+      <div>
+        <small class="muted">ښه راغلاست</small>
+        <h2 id="welcomeName">کارکوونکی</h2>
+      </div>
+
+      <button id="logout2" class="ghost">
+        وتل
+      </button>
+
     </div>
-
-    <button id="logout2" class="danger">
-      وتل
-    </button>
 
   </div>
 
@@ -177,102 +183,116 @@
     <div class="stat card">
       <span>کندهار</span>
       <b id="kCount">0</b>
-      <small>جنسونه</small>
+      <small>آرډرونه</small>
     </div>
 
     <div class="stat card">
       <span>نور ولایتونه</span>
       <b id="oCount">0</b>
-      <small>جنسونه</small>
+      <small>آرډرونه</small>
     </div>
 
     <div class="stat card">
-      <span>ټوله بیه</span>
+      <span>ټول قیمت</span>
       <b id="total">0</b>
-      <small>؋ افغانۍ</small>
+      <small>افغانۍ</small>
     </div>
 
   </div>
 
 
-  <div class="sectionHead">
+  <div class="card">
 
-    <h3>
-      زما وروستي آرډرونه
-    </h3>
+    <div class="row between">
+      <h2>وروستي آرډرونه</h2>
 
-    <button id="newOrder" class="primary small">
-      ＋ نوی آرډر
-    </button>
+      <button id="newOrder" class="primary">
+        + نوی آرډر
+      </button>
+    </div>
+
+    <div id="orders"></div>
 
   </div>
-
-
-  <div id="orders" class="list"></div>
 
 </section>
 
 
-<!-- ==================== ADMIN ==================== -->
+<!-- ================= ADMIN ================= -->
 
 <section id="admin" class="hidden">
 
   <div class="card">
 
-    <div class="sectionHead">
+    <div class="row between">
 
       <div>
-        <span class="muted">اډمین</span>
-        <h2>مدیریت</h2>
+        <small class="muted">مدیریت</small>
+        <h2>اډمین پینل</h2>
       </div>
 
-      <button id="adminLogout" class="danger">
+      <button id="adminLogout" class="ghost">
         وتل
       </button>
 
     </div>
 
+  </div>
 
-    <h3>
-      د شاګردانو تایید
-      <span id="pendingCount" class="badge">0</span>
-    </h3>
 
-    <div id="requests" class="list"></div>
+  <div class="card">
 
-    <hr>
+    <div class="row between">
 
-    <h3>
-      ټول آرډرونه
-    </h3>
+      <h2>د کارکوونکو غوښتنې</h2>
 
-    <div id="allOrders" class="list"></div>
+      <span id="pendingCount" class="badge">
+        0
+      </span>
+
+    </div>
+
+    <div id="requests"></div>
+
+  </div>
+
+
+  <div class="card">
+
+    <h2>ټول آرډرونه</h2>
+
+    <div id="allOrders"></div>
 
   </div>
 
 </section>
 
-</main>
 
-
-<!-- ==================== NEW ORDER MODAL ==================== -->
+<!-- ================= NEW ORDER MODAL ================= -->
 
 <div id="orderModal" class="modal hidden">
 
   <div class="modalBox">
 
-    <button class="x" data-close>
-      ×
-    </button>
+    <div class="row between">
 
-    <h2>
-      نوی آرډر
-    </h2>
+      <h2>نوی آرډر</h2>
+
+      <button
+        class="ghost"
+        data-close
+        type="button"
+      >
+        ✕
+      </button>
+
+    </div>
+
 
     <form id="orderForm" class="form">
 
       <label>
-        د جنس عکس
+        د محصول عکس
         <input
           id="orderPhoto"
           type="file"
@@ -282,17 +302,17 @@
 
 
       <label>
-        د جنس نوم
+        د محصول نوم
         <input
           id="orderName"
-          placeholder="مثلاً: نارینه کمیس"
+          placeholder="مثلاً: کریسټل هیر جیل"
           required
         >
       </label>
 
 
       <label>
-        د مشتری شمېره
+        د مشتری موبایل
         <input
           id="customerPhone"
           inputmode="tel"
@@ -328,6 +348,7 @@
         بشپړ ادرس
         <textarea
           id="address"
+          rows="3"
           placeholder="د مشتری بشپړ ادرس"
           required
         ></textarea>
@@ -335,19 +356,22 @@
 
 
       <label>
-        ټوله بیه (افغانۍ)
+        ټول قیمت
         <input
           id="price"
           type="number"
           min="0"
-          placeholder="مثلاً: 1400"
+          placeholder="مثلاً 1400"
           required
         >
       </label>
 
 
-      <button type="submit" class="primary">
-        آرډر ثبتول
+      <button
+        type="submit"
+        class="primary"
+      >
+        📦 آرډر ثبت کړه
       </button>
 
     </form>
@@ -357,44 +381,53 @@
 </div>
 
 
-<!-- ==================== FORGOT PIN ==================== -->
+<!-- ================= FORGOT PIN ================= -->
 
 <div id="forgotModal" class="modal hidden">
 
   <div class="modalBox">
 
-    <button class="x" data-close>
-      ×
-    </button>
+    <div class="row between">
 
-    <h2>
-      PIN مو هېر شوی؟
-    </h2>
+      <h2>PIN مې هېر شوی</h2>
 
-    <p>
-      له اډمین سره په
-      <b>0700426319</b>
-      اړیکه ونیسئ.
-      اډمین به درته نوی څلور عددي PIN وټاکي.
+      <button
+        class="ghost"
+        data-close
+        type="button"
+      >
+        ✕
+      </button>
+
+    </div>
+
+    <p class="muted">
+      د PIN د بیا ترلاسه کولو لپاره له اډمین سره اړیکه ونیسئ.
     </p>
 
-    <button class="primary" data-close>
-      سمه ده
-    </button>
+    <div class="card center">
+
+      <div class="big">📞</div>
+
+      <b>0700426319</b>
+
+    </div>
 
   </div>
 
 </div>
 
 
-<!-- ==================== TOAST ==================== -->
+<!-- ================= TOAST ================= -->
 
-<div id="toast" class="toast"></div>
+<div id="toast"></div>
+
+</main>
+
+</div>
 
 
-<!-- ========================================================= -->
-<!-- FIREBASE -->
-<!-- ========================================================= -->
+<!-- ================= FIREBASE ================= -->
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 
@@ -425,9 +458,7 @@ const firebaseConfig = {
 
 };
 
-
 firebase.initializeApp(firebaseConfig);
-
 
 window.firebaseApp = firebase.app();
 
@@ -440,10 +471,14 @@ window.firebaseStorage = firebase.storage();
 </script>
 
 
-<!-- APP JAVASCRIPT باید د Firebase وروسته وي -->
+<!-- Firebase reCAPTCHA container -->
+
+<div id="recaptcha-container"></div>
+
+
+<!-- App -->
 
 <script src="app.js"></script>
-
 
 </body>
 </html>
